@@ -891,7 +891,7 @@ legend("topleft", inset=.02, title="Edge",
 
 # Coments: comparing to frequentist method JGL
 
-Check out my tutorial on the frequentist method "Joint Graphical Lasso" (JGL) using the same metabolite data in this tutorial to compare the analysis results.
+Check out my [tutorial on the frequentist method "Joint Graphical Lasso" (JGL)](https://mljaniczek.github.io/jgl-tutorial/) using the same metabolite data in this tutorial to compare the analysis results.
 
 A few observations I have: 
 
