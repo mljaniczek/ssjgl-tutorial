@@ -50,8 +50,37 @@ igraph_options(annotate.plot = TRUE) # setting default to annotate plot with num
 dat <- read.csv("hapo_metabolomics_2020.csv")
 ```
 
+# SSJGL Overview
+
+See the paper ["Bayesian Joint Spike-and-Slab Graphical Lasso"](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7845917/) for a full description of the method. Here we will briefly  describe the procedure. 
+
+## Background
+
+* Within the world of frequentist joint graphical model estimation, joint graphical lasso (JGL) (Guo 2011) is one of the most popular methods.  
+
+* JGL falls under the family of penalized regression, and is the basis of multiple subsequent method formulations Of note, fused graphical lasso (FGL) and group graphical lasso (GGL) (Danaher 2014) are the most widely used methods which expand on JGL. 
+
+* FGL encourages off-diagonal elements of the estimated precision matrix to share both patterns of sparsity and similar values of non-zero elements, while GGL only encourages similar sparsity patterns across groups.
+
+* However, these methods are extremely sensitive to choice of penalty parameters, and require methods like cross validation for tuning, which in turn requires a large enough sample size (and often large computational power) to run. Even after tuning penalty parameters using CV based on AIC, JGL methods tend to favor large models. 
+
+* Bayesian joint graphical model estimation can be designed to overcome some of these difficulties, encourage sparsity of graph solutions, and account for uncertainty in the graph structure (according to [Ni 2021](https://pubmed.ncbi.nlm.nih.gov/35673326/))
+
+* Li, McCormick, and Clark proposed a [Bayesian spike-and-slab joint graphical lasso](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7845917/) (SSJGL) with an EM algorithm approach which results in a point estimate of the graphs and can scale to high dimensions
+  
+  * They propose Bayesian formulations of the popular frequentist FGL and GGL methods, called DSS-FGL and DSS-GGL respectively. 
+  
+  * I became really excited about trying out this method and comparing it to FGL and GGL! While scripts were available, I decided to make an R package based off of them called ([spikeyglass](https://mljaniczek.github.io/spikeyglass/)) so that myself and others could more easily apply SSJGL to real-world datasets. 
+
+
+
+
+# Application of SSJGL to metabolomics dataset
+
+So let's get to an application of Bayesian joint spike-and-slab graphical lasso now! We will essentially be taking the data from each ancestry section simultaneously perform variable selection and shrinkage by using the doubly-spike-and-slab extensions to Danaher's 2014 GGL and FGL. 
 
 ## Data description
+
 Data comes from Hyperglycemia and Adverse Pregnancy Outcome (HAPO) Study. Metabolites were measured from blood samples taken from pregnant women from four ancestry groups: Afro-Caribbean, Mexican American, Northern European, and Thai. 
 
 The data consists of ID variable, ancestry group, and metabolites (p = 51 features). The ancestry groups (K = 4) are balanced (n = 400 each, with 1600 total observations).There is also a variable "fpg" which is fasting plasma glucose, which I omit from this analysis. 
@@ -209,11 +238,7 @@ The y axis has the 51 metabolites, clustered using hierarchical clustering, and 
 
 From this heatmap we can see there are big differences in the values for "Other" metabolite group (pink) across the 4 ancestry groups. metabolites from Amino Acids and Acyl Carnitines groups appear to be more homogeneous across the classes. 
 
-# Application of SSJGL to metabolomics dataset
-
-Let's get to bayesian joint spike-and-slab graphical lasso now! We will essentially be taking the data from each ancestry section simultaneously perform variable selection and shrinkage by using the doubly-spike-and-slab extensions to Danaher's 2014 GGL and FGL. 
-
-## Load spikeyglass
+## Apply DSS-FGL
 
 I created the `spikeyglass` package using scripts provided with the paper: 
 
@@ -224,8 +249,6 @@ The package allows us to mirror the same analysis as the frequentist Fused Graph
 ```{r}
 library(spikeyglass)
 ```
-
-## Running DSS-FGL
 
 We will first use the `spikeyglass` package to run doubly spike-and-slab fused graphical lasso (DSS-FGL) to jointly estimate the graphs in our 4 ancestry groups. 
 
@@ -282,7 +305,7 @@ load(here::here("results/ssjgl_res_a1bp.Rdata"))
 
 ```
 
-#### Diagnostic 
+### Diagnostic 
 
 First, we can plot the solution path and estimated precision matrices of SSJGL, as done in the paper. 
 Essentially we are plotting the estimated partial correlations between all nodes over the iterations of the EM algorithm. 
@@ -303,7 +326,7 @@ plot_path(lam1/v0s, fit1, thres = 0, normalize = T, xlab = expression(lambda[1]/
 ```
 
 
-#### Plotting estimated partial correlations
+### Plotting estimated partial correlations
 
 Now we can plot the estimated partil correlations from our DSS-FGL solution. 
 
@@ -460,7 +483,7 @@ legend("topleft", inset=.02, title="Edge",
 
 
 
-## Running DS-GGL
+## Apply DS-GGL
 
 Now we will run the doubly spike-and-slab group graphical lasso (DS-GGL). All that needs to be changed in the code is to specify the "group" penalty.
 
@@ -480,7 +503,7 @@ load(here::here("results/dssggl_res_a1bp.Rdata"))
 
 ```
 
-#### Diagnostic 
+### Diagnostic 
 
 As above, we can plot the solution paths to get a sense of if the solution converged. 
 
@@ -496,7 +519,7 @@ plot_path(lam1/v0s, fit_group, thres = 0, normalize = T, xlab = expression(lambd
 ```
 
 
-#### Plotting estimated partial correlations
+### Plotting estimated partial correlations
 
 Now we can plot the estimated partil correlations from our DSS-FGL solution. 
 
@@ -589,6 +612,8 @@ legend("topleft", inset=.02, title="Edge",
 # Effect of parameters {.tabset}
 
 To demonstrate the effect of various initial parameter choices I ran several additional models with "extreme" parameter choices. 
+
+My main takeaway is that the results are consistent and stable no matter the input parameters, with the exception that if $\lambda_1$ or $\lambda_2$ are 0 then the solution is completely sparse with no edges. 
 
 ```{r include=FALSE}
 
@@ -795,6 +820,7 @@ test_graph4 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam1_0$thetalist[[
 #    edge_labels, fill=edge_palette, cex=0.8)
 ```
 
+
 ## $\lambda_1$ = 0.1
 
 No edges 
@@ -853,7 +879,10 @@ test_graph4 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam2_0$thetalist[[
                                     weighted = T,
                     mode = "undirected",
                     diag = FALSE)
+
+
 ```
+
 
 ```{r}
 
@@ -909,6 +938,8 @@ A few observations I have:
 Danaher P, Wang P and Witten D (2011). The joint graphical lasso for inverse covariance estimation across multiple classes. http://arxiv.org/abs/1111.0324
 
 Li ZR, McCormick TH, Clark SJ. Bayesian Joint Spike-and-Slab Graphical Lasso. Proc Mach Learn Res. 2019 Jun;97:3877-3885. PMID: 33521648; PMCID: PMC7845917.
+
+Ni Y, Baladandayuthapani V, Vannucci M, Stingo FC. Bayesian graphical models for modern biological applications. Stat Methods Appt. 2022;31(2):197-225. doi:10.1007/s10260-021-00572-8
 
 Raji Balasubramanian, Denise Scholtens (2021). ENAR Conference Presentation. (Metabolomics dataset and description)
 
