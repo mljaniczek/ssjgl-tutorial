@@ -904,5 +904,36 @@ A few observations I have:
 * I also found the results of SSJGL to be stable no matter what starting parameters I threw at it, with the number of the edges in the solution ranging from 102-148 edges. This contrasts to when I threw all kinds of lambdas into JGL and the solution for this same dataset ranged from 44 edges (with large penalty parameter lambdas) to 692 edges (with small lambdas). 
 
 
+# References
+
+Danaher P, Wang P and Witten D (2011). The joint graphical lasso for inverse covariance estimation across multiple classes. http://arxiv.org/abs/1111.0324
+
+Li ZR, McCormick TH, Clark SJ. Bayesian Joint Spike-and-Slab Graphical Lasso. Proc Mach Learn Res. 2019 Jun;97:3877-3885. PMID: 33521648; PMCID: PMC7845917.
+
+Raji Balasubramanian, Denise Scholtens (2021). ENAR Conference Presentation. (Metabolomics dataset and description)
+
+## Packages and resources used to create this tutorial
+
+* [igraph](https://igraph.org/): for plotting network graphs  
+* [JGL](https://cran.r-project.org/package=JGL): for running Joint Graphical Lasso  
+* [tidyverse](https://www.tidyverse.org/): for data wrangling   
+
+* [RColorBrewer](https://cran.r-project.org/package=RColorBrewer): for pretty color palettes
+
+* pheatmap: My favorite heatmap package, makes the heatmaps with annotated tracks
+(See this [blog post](https://davetang.org/muse/2018/05/15/making-a-heatmap-in-r-with-the-pheatmap-package/) by Dave Tang for a nice tutorial on using this package.)
+
+* I built the tutorial site using [GitHub pages](https://pages.github.com/) and RMarkdown. See [here](https://happygitwithr.com/rstudio-git-github.html) for Jenny Bryant's guide to using Git and Rmarkdown. 
+
+## Acknowledgements
+
+Thank you to Dr. Richard Li for providing SSJGL scripts and encouragement for R package creation!  
+
+Thank you to Dr. Raji Balasubramanian for the metabolomics data, which was previously presented at ENAR 2021 with Dr. Denise Scholtens. 
+
+Thank you to Dr. Kate Hoff Shutta and Dr. Yukun Li who provided code for the beautiful circular network graphs. 
+
+
+
 
 
