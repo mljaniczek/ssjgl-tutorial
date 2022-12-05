@@ -236,9 +236,13 @@ Per the SSJGL paper, the converged region is insensitive to the choice of lambda
 So to start off we will set the parameters as follows, and will demonstrate the stability of the results in a later section. 
 
 lam1 <- 1
+
 lam2 <- 1
+
 v1 <- 1
+
 lam.eff <- lam1 + c(1:10) * 5
+
 v0s <- lam1/lam.eff
 
 ```{r set_parameters}
@@ -252,6 +256,8 @@ lam2 <- 1
 v1 <- 1
 lam.eff <- lam1 + c(1:10) * 5
 v0s <- lam1/lam.eff
+
+v0s
 ```
 
 ### Run ssjgl function
@@ -276,9 +282,47 @@ load(here::here("results/ssjgl_res_a1bp.Rdata"))
 
 ```
 
-I am also going to specify colors based on the three metabolite groups and whether or not an edge indicates positive or negative correlation.
+#### Diagnostic 
+
+First, we can plot the solution path and estimated precision matrices of SSJGL, as done in the paper. 
+Essentially we are plotting the estimated partial correlations between all nodes over the iterations of the EM algorithm. 
+
+We can see that over the iterations many of the partial correlations shrink down to 0 while the non-zero elements stabilize, which helps us feel confident that the EM algorithm converged. 
+
+
+
+```{r fig.height = 9, fig.width=9}
+# Get plot titles 
+mains <- c(paste0("Class 1"), 
+		   paste0("Class 2"), 
+		   paste0("Class 3"),
+		   "Class 4")
+
+plot_path(lam1/v0s, fit1, thres = 0, normalize = T, xlab = expression(lambda[1]/v[0]), ylab = "Partial correlations",  main = mains, par = c(2, 2),
+          position = "none")
+```
+
+
+#### Plotting estimated partial correlations
+
+Now we can plot the estimated partil correlations from our DSS-FGL solution. 
+
+We see that for each class, there are 3 big "chunks" within the heatmap, which correspond with the 3 classes of metabolites. The patterns do look largely similar. 
+
+```{r}
+par(mfrow = c(2, 2))
+for(i in 1:length(dat_mat_list)){
+  corrplot::corrplot(-cov2cor(fit1$thetalist[[10]][[i]]), method="color", diag=F, is.corr=F)
+}
+
+
+```
+
+
 
 ```{r graph_colors}
+
+#I am also going to specify colors based on the three metabolite groups and whether or not an edge indicates positive or negative correlation.
 # specify colors for vertices (groups of metabolites in our case)
 
 color_opts <- RColorBrewer::brewer.pal(3, "Dark2")
@@ -337,7 +381,8 @@ plot(makePrettyGraphFromGraph(test_graph, multiplier = 5),
 
 ### DSS-FGL Results {.tabset}
 
-Extract estimated covariance matrices and prepare for visualization.
+
+Finally we will extract estimated covariance matrices and prepare for visualizing the graphical model using the `igraph` package.
 
 ```{r plots4all}
 # extract all estimated covariance matrices from result
@@ -412,6 +457,9 @@ legend("topleft", inset=.02, title="Edge",
 
 ```
 
+
+
+
 ## Running DS-GGL
 
 Now we will run the doubly spike-and-slab group graphical lasso (DS-GGL). All that needs to be changed in the code is to specify the "group" penalty.
@@ -431,6 +479,38 @@ penalty = "group"
 load(here::here("results/dssggl_res_a1bp.Rdata"))
 
 ```
+
+#### Diagnostic 
+
+As above, we can plot the solution paths to get a sense of if the solution converged. 
+
+```{r fig.height = 9, fig.width=9}
+# Get plot titles 
+mains <- c(paste0("Class 1"), 
+		   paste0("Class 2"), 
+		   paste0("Class 3"),
+		   "Class 4")
+
+plot_path(lam1/v0s, fit_group, thres = 0, normalize = T, xlab = expression(lambda[1]/v[0]), ylab = "Partial correlations",  main = mains, par = c(2,2),
+          position = "none")
+```
+
+
+#### Plotting estimated partial correlations
+
+Now we can plot the estimated partil correlations from our DSS-FGL solution. 
+
+We see that for each class, there are 3 big "chunks" within the heatmap, which correspond with the 3 classes of metabolites. The patterns do look largely similar. 
+
+```{r}
+par(mfrow = c(2, 2))
+for(i in 1:length(dat_mat_list)){
+  corrplot::corrplot(-cov2cor(fit_group$thetalist[[10]][[i]]), method="color", diag=F, is.corr=F)
+}
+
+
+```
+
 
 ### DSS-FGL Results {.tabset}
 
@@ -506,34 +586,33 @@ legend("topleft", inset=.02, title="Edge",
 ```
 
 
-
-fit1
-b = 1 : 552 edges
-b = p : 461 edges
-
-fit2
-b = 1 : 306 edges
-b = p : 217 edges
-
-So increase in b makes a more sparse solution. 
-
-Doubly makes it more sparse by 10 edges.
-
 # Effect of parameters {.tabset}
 
 To demonstrate the effect of various initial parameter choices I ran several additional models with "extreme" parameter choices. 
 
 ```{r include=FALSE}
+
+# fit1
+# b = 1 : 552 edges
+# b = p : 461 edges
+# 
+# fit2
+# b = 1 : 306 edges
+# b = p : 217 edges
+# 
+# So increase in b makes a more sparse solution. 
+# 
+# Doubly makes it more sparse by 10 edges.
 # small p initializing parameter
-fit_group_smallp = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s,   a=1, b=1, doubly=TRUE, normalize=FALSE)
-
-save(fit_group_smallp, file = here::here("results/dssggl_res_a1b1.Rdata"))
-###
-
-#large a initializing parameter
-fit_group_bigabigb = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s,   a=p, b=p, doubly=TRUE, normalize=FALSE)
-
-save(fit_group_bigabigb, file = here::here("results/dssggl_res_apbp.Rdata"))
+# fit_group_smallp = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s,   a=1, b=1, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_smallp, file = here::here("results/dssggl_res_a1b1.Rdata"))
+# ###
+# 
+# #large a initializing parameter
+# fit_group_bigabigb = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s,   a=p, b=p, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_bigabigb, file = here::here("results/dssggl_res_apbp.Rdata"))
 
 # fit_group_lam0_10 = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=10, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s,   a=1, b=p, doubly=TRUE, normalize=FALSE)
 # 
@@ -544,13 +623,45 @@ save(fit_group_bigabigb, file = here::here("results/dssggl_res_apbp.Rdata"))
 # 
 # save(fit_group_lam1_10, file = here::here("results/dssggl_res_a1bplam110.Rdata"))
 
+# fit_group_lam0_0 = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=0, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s,   a=1, b=p, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_lam0_0, file = here::here("results/dssggl_res_a1bplam00.Rdata"))
+
+# fit_group_lam1_0 = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=1, lambda1=0,lambda2=lam2, v1 = v1, v0s = v0s,   a=1, b=p, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_lam1_0, file = here::here("results/dssggl_res_a1bplam10.Rdata"))
+# 
+# fit_group_lam2_0 = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=0, v1 = v1, v0s = v0s,   a=1, b=p, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_lam2_0, file = here::here("results/dssggl_res_a1bplam20.Rdata"))
+
+# fit_group_lam0_01 = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=0.1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s,   a=1, b=p, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_lam0_01, file = here::here("results/dssggl_res_a1bplam001.Rdata"))
+# 
+# fit_group_lam1_01 = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=0.1, lambda1=0,lambda2=lam2, v1 = v1, v0s = v0s,   a=1, b=p, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_lam1_01, file = here::here("results/dssggl_res_a1bplam101.Rdata"))
+# 
+# fit_group_lam2_01 = ssjgl(Y=dat_mat_list,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=0.1, v1 = v1, v0s = v0s,   a=1, b=p, doubly=TRUE, normalize=FALSE)
+# 
+# save(fit_group_lam2_01, file = here::here("results/dssggl_res_a1bplam201.Rdata"))
+
+
+
 load(here::here("results/dssggl_res_a1b1.Rdata"))
 load(here::here("results/dssggl_res_apbp.Rdata"))
 load(here::here("results/dssggl_res_a1bplam010.Rdata"))
 load(here::here("results/dssggl_res_a1bplam110.Rdata"))
+load(here::here("results/dssggl_res_a1bplam00.Rdata"))
+load(here::here("results/dssggl_res_a1bplam10.Rdata"))
+load(here::here("results/dssggl_res_a1bplam20.Rdata"))
+load(here::here("results/dssggl_res_a1bplam001.Rdata"))
+load(here::here("results/dssggl_res_a1bplam101.Rdata"))
+load(here::here("results/dssggl_res_a1bplam201.Rdata"))
 ```
 
-## Small a and b
+## a = b = 1
 
 ```{r}
 i = 1
@@ -565,14 +676,14 @@ test_graph <- graph_from_adjacency_matrix(-cov2cor(fit_group_smallp$thetalist[[l
 plot_jgl(test_graph,  multiplier = 3, 
          vertex.color = color_list$color,
          vertex.label.color = color_list$color,
-         main = "Class 1, DSS-GGL, small a and b")
+         main = "Class 1, DSS-GGL, a = b = 1")
 legend("bottomleft", inset=.02, title="Metabolite class",
    unique(color_list$class), fill=color_opts, cex=0.8)
 legend("topleft", inset=.02, title="Edge",
    edge_labels, fill=edge_palette, cex=0.8)
 ```
 
-## Large a and b
+##  a = b = p
 
 ```{r}
 
@@ -587,14 +698,58 @@ test_graph2 <- graph_from_adjacency_matrix(-cov2cor(fit_group_bigabigb$thetalist
 plot_jgl(test_graph2,  multiplier = 3, 
          vertex.color = color_list$color,
          vertex.label.color = color_list$color,
-         main = "Class 1, DSS-GGL, large a and b")
+         main = "Class 1, DSS-GGL, a = b = p")
 legend("bottomleft", inset=.02, title="Metabolite class",
    unique(color_list$class), fill=color_opts, cex=0.8)
 legend("topleft", inset=.02, title="Edge",
    edge_labels, fill=edge_palette, cex=0.8)
 ```
 
-## Large labmda_0
+## $\lambda_0$ = 0
+
+```{r}
+
+test_graph3 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam0_0$thetalist[[length(v0s)]][[i]]),
+                                    weighted = T,
+                    mode = "undirected",
+                    diag = FALSE)
+```
+
+```{r}
+
+plot_jgl(test_graph3,  multiplier = 3, 
+         vertex.color = color_list$color,
+         vertex.label.color = color_list$color,
+         main = bquote("Class 1, DSS-GGL"~lambda[0]==0))
+legend("bottomleft", inset=.02, title="Metabolite class",
+   unique(color_list$class), fill=color_opts, cex=0.8)
+legend("topleft", inset=.02, title="Edge",
+   edge_labels, fill=edge_palette, cex=0.8)
+```
+
+## $\lambda_0$ = 0.01
+
+```{r}
+
+test_graph3 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam0_01$thetalist[[length(v0s)]][[i]]),
+                                    weighted = T,
+                    mode = "undirected",
+                    diag = FALSE)
+```
+
+```{r}
+
+plot_jgl(test_graph3,  multiplier = 3, 
+         vertex.color = color_list$color,
+         vertex.label.color = color_list$color,
+         main = bquote("Class 1, DSS-GGL"~lambda[0]==0.1))
+legend("bottomleft", inset=.02, title="Metabolite class",
+   unique(color_list$class), fill=color_opts, cex=0.8)
+legend("topleft", inset=.02, title="Edge",
+   edge_labels, fill=edge_palette, cex=0.8)
+```
+
+## $\lambda_0$ = 10
 
 ```{r}
 
@@ -609,14 +764,62 @@ test_graph3 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam0_10$thetalist[
 plot_jgl(test_graph3,  multiplier = 3, 
          vertex.color = color_list$color,
          vertex.label.color = color_list$color,
-         main = "Class 1, DSS-GGL, large lambda0")
+         main = bquote("Class 1, DSS-GGL"~lambda[0]==10))
 legend("bottomleft", inset=.02, title="Metabolite class",
    unique(color_list$class), fill=color_opts, cex=0.8)
 legend("topleft", inset=.02, title="Edge",
    edge_labels, fill=edge_palette, cex=0.8)
 ```
 
-## Large lambda_1
+## $\lambda_1$ = 0
+
+No edges 
+
+```{r}
+
+test_graph4 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam1_0$thetalist[[length(v0s)]][[i]]),
+                                    weighted = T,
+                    mode = "undirected",
+                    diag = FALSE)
+```
+
+```{r}
+
+# plot_jgl(test_graph4,  multiplier = 3, 
+#          vertex.color = color_list$color,
+#          vertex.label.color = color_list$color,
+#          main = "Class 1, DSS-GGL, zero lambda_1")
+# legend("bottomleft", inset=.02, title="Metabolite class",
+#    unique(color_list$class), fill=color_opts, cex=0.8)
+# legend("topleft", inset=.02, title="Edge",
+#    edge_labels, fill=edge_palette, cex=0.8)
+```
+
+## $\lambda_1$ = 0.1
+
+No edges 
+
+```{r}
+
+# test_graph4 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam1_01$thetalist[[length(v0s)]][[i]]),
+#                                     weighted = T,
+#                     mode = "undirected",
+#                     diag = FALSE)
+```
+
+```{r}
+
+# plot_jgl(test_graph4,  multiplier = 3,
+#          vertex.color = color_list$color,
+#          vertex.label.color = color_list$color,
+#          main = "Class 1, DSS-GGL, lambda_1 = 0.1")
+# legend("bottomleft", inset=.02, title="Metabolite class",
+#    unique(color_list$class), fill=color_opts, cex=0.8)
+# legend("topleft", inset=.02, title="Edge",
+#    edge_labels, fill=edge_palette, cex=0.8)
+```
+
+## $\lambda_1$ = 10
 
 ```{r}
 
@@ -631,7 +834,55 @@ test_graph4 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam1_10$thetalist[
 plot_jgl(test_graph4,  multiplier = 3, 
          vertex.color = color_list$color,
          vertex.label.color = color_list$color,
-         main = "Class 1, DSS-GGL, large lambda_1")
+         main = bquote("Class 1, DSS-GGL"~lambda[1]==10))
+legend("bottomleft", inset=.02, title="Metabolite class",
+   unique(color_list$class), fill=color_opts, cex=0.8)
+legend("topleft", inset=.02, title="Edge",
+   edge_labels, fill=edge_palette, cex=0.8)
+```
+
+
+
+## $\lambda_2$ = 0
+
+No edges 
+
+```{r}
+
+test_graph4 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam2_0$thetalist[[length(v0s)]][[i]]),
+                                    weighted = T,
+                    mode = "undirected",
+                    diag = FALSE)
+```
+
+```{r}
+
+# plot_jgl(test_graph4,  multiplier = 3,
+#          vertex.color = color_list$color,
+#          vertex.label.color = color_list$color,
+#          main = "Class 1, DSS-GGL, zero lambda_1")
+# legend("bottomleft", inset=.02, title="Metabolite class",
+#    unique(color_list$class), fill=color_opts, cex=0.8)
+# legend("topleft", inset=.02, title="Edge",
+#    edge_labels, fill=edge_palette, cex=0.8)
+```
+
+## $\lambda_2$ = 0.1
+
+```{r}
+
+test_graph4 <- graph_from_adjacency_matrix(-cov2cor(fit_group_lam2_01$thetalist[[length(v0s)]][[i]]),
+                                    weighted = T,
+                    mode = "undirected",
+                    diag = FALSE)
+```
+
+```{r}
+
+plot_jgl(test_graph4,  multiplier = 3,
+         vertex.color = color_list$color,
+         vertex.label.color = color_list$color,
+         main = bquote("Class 1, DSS-GGL"~lambda[2]==0.1))
 legend("bottomleft", inset=.02, title="Metabolite class",
    unique(color_list$class), fill=color_opts, cex=0.8)
 legend("topleft", inset=.02, title="Edge",
