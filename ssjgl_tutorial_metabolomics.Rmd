@@ -6,7 +6,7 @@ knit: (function(input_file, encoding) {
       encoding=encoding,
       output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "Margaret Janiczek"
-date: "2022-10-02"
+date: "2022-12-05"
 output: 
   html_document:
     toc: true
@@ -328,7 +328,7 @@ plot_path(lam1/v0s, fit1, thres = 0, normalize = T, xlab = expression(lambda[1]/
 
 ### Plotting estimated partial correlations
 
-Now we can plot the estimated partil correlations from our DSS-FGL solution. 
+Now we can plot the estimated partial correlations from our DSS-FGL solution. 
 
 We see that for each class, there are 3 big "chunks" within the heatmap, which correspond with the 3 classes of metabolites. The patterns do look largely similar. 
 
@@ -521,7 +521,7 @@ plot_path(lam1/v0s, fit_group, thres = 0, normalize = T, xlab = expression(lambd
 
 ### Plotting estimated partial correlations
 
-Now we can plot the estimated partil correlations from our DSS-FGL solution. 
+Now we can plot the estimated partial correlations from our DSS-FGL solution. 
 
 We see that for each class, there are 3 big "chunks" within the heatmap, which correspond with the 3 classes of metabolites. The patterns do look largely similar. 
 
@@ -535,7 +535,7 @@ for(i in 1:length(dat_mat_list)){
 ```
 
 
-### DSS-FGL Results {.tabset}
+### DSS-GGL Results {.tabset}
 
 Extract estimated covariance matrices and prepare for visualization.
 
@@ -965,6 +965,76 @@ Thank you to Dr. Raji Balasubramanian for the metabolomics data, which was previ
 Thank you to Dr. Kate Hoff Shutta and Dr. Yukun Li who provided code for the beautiful circular network graphs. 
 
 
+```{r include = FALSE}
+
+
+# densityplot_multi <- function(fitlist, xobj, yobj, type='l', xlab="", ylab = "", main="", grid=100, color="black", add = FALSE, xlim = NULL, ylim = NULL, lty=1, palette="Blues", lastcol=FALSE, labels = NULL, ...){
+# 	update_xlim <- is.null(xlim)
+# 	update_ylim <- is.null(ylim)
+# 	if(is.null(labels)) labels <- as.character(1:length(fitlist))
+# 	dat <- NULL
+# 	if(length(lastcol) == 1) lastcol = rep(lastcol, length(fitlist))
+# 	for(rep in 1:length(fitlist)){
+# 	  #browser()
+# 		fit <- fitlist[[rep]]
+# 		L <- length(fit)
+# 		if(L == 0) next
+# 		dimen <- c(1, 1)
+# 		if(class(fit[[1]][[xobj]])[1] == "matrix"){
+# 			dimen[1] <- 2
+# 			M <- dim(fit[[1]][[xobj]])[1]
+# 		}else{
+# 			dimen[1] <- 1
+# 			M <- length(fit[[1]][[xobj]])
+# 		}
+# 		if(class(fit[[1]][[yobj]])[1] == "matrix"){
+# 			dimen[2] <- 2
+# 		}else{
+# 			dimen[2] <- 1
+# 		}
+# 		xx <- yy <- matrix(NA, L, M)
+# 		if(dimen[1] == 1){
+# 			for(i in 1:L){
+# 				xx[i, ] <-  fit[[i]][[xobj]]
+# 			}		
+# 		}else{
+# 			for(i in 1:L){
+# 				xx[i, ] <-  apply(fit[[i]][[xobj]], 1, sum)
+# 			}
+# 		}
+# 		if(dimen[2] == 1){
+# 			for(i in 1:L){
+# 				yy[i, ] <-  fit[[i]][[yobj]]
+# 			}		
+# 		}else{
+# 			for(i in 1:L){
+# 				yy[i, ] <-  apply(fit[[i]][[yobj]], 1, sum)
+# 			}
+# 		}
+# 		if(lastcol[rep]){
+# 			xx = xx[, dim(xx)[2]]
+# 			yy = yy[, dim(yy)[2]]
+# 		}
+# 		dat <- rbind(dat, data.frame(x=as.numeric(xx), y = as.numeric(yy), group=labels[rep]))
+# 	 	if(update_xlim) xlim <- range(c(xlim, range(xx)), na.rm=T)
+# 		if(update_ylim) ylim <- range(c(ylim, range(yy)), na.rm=T)
+# 	}
+#  # 	g <- ggplot() + xlim(xlim) + ylim(ylim)
+# 	# for(sub in labels){
+# 	# 	g <- g + stat_density2d(geom="tile", aes(x=x, y=y, fill = group, alpha=..density..), contour=FALSE, data=subset(dat, group==sub))
+# 	# }
+# 	g <- ggplot(dat, aes(x=x, y=y)) + xlim(xlim) + ylim(ylim) + stat_density2d(geom="tile", aes(fill = group), contour=FALSE)
+#    #                + 
+#   	# scale_fill_manual(values=c("a"="#FF0000", "b"="#00FF00"))
+# 	return(g)
+# }
+# 
+# densityplot_multi(
+#   fit_group,
+#   xobj = 2,
+#   yobj = 2
+# )
+```
 
 
 
