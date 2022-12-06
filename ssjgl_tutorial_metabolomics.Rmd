@@ -52,25 +52,24 @@ dat <- read.csv("hapo_metabolomics_2020.csv")
 
 # SSJGL Overview
 
-See the paper ["Bayesian Joint Spike-and-Slab Graphical Lasso"](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7845917/) for a full description of the method. Here we will briefly  describe the procedure. 
+See the paper ["Bayesian Joint Spike-and-Slab Graphical Lasso"](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7845917/) for a full description of the method. Here we will briefly  describe the background and procedure. 
 
 ## Background
 
-* Within the world of frequentist joint graphical model estimation, joint graphical lasso (JGL) (Guo 2011) is one of the most popular methods.  
+For this project I did a deep dive reading into Bayesian methods for joint estimation of graphical models. Two review papers were particularly useful in learning the landscape of available methods: Ni 2022 and Tan 2017. Also I will note two non-Bayesian specific review papers for graphical model estimation: Shojaie 2020 and Tsai 2022, which mainly focus on frequentist methods but mention a few Bayesian methods as well. 
 
-* JGL falls under the family of penalized regression, and is the basis of multiple subsequent method formulations Of note, fused graphical lasso (FGL) and group graphical lasso (GGL) (Danaher 2014) are the most widely used methods which expand on JGL. 
+Within the world of frequentist joint graphical model estimation, joint graphical lasso (JGL) (Guo 2011) is one of the most popular methods.  JGL falls under the family of penalized regression, and is the basis of multiple subsequent method formulations. Of note, fused graphical lasso (FGL) and group graphical lasso (GGL) (Danaher 2014) are the most widely used methods which expand on JGL. FGL encourages off-diagonal elements of the estimated precision matrix to share both patterns of sparsity and similar values of non-zero elements, while GGL only encourages similar sparsity patterns across groups. Since biological applications are often highly correlated and high dimensional, a penalized regression approach like graphical lasso allows for both shrinkage and variable selection simultaneously, which is crucial to come up with a biologically meaningful, sparse network solution. 
 
-* FGL encourages off-diagonal elements of the estimated precision matrix to share both patterns of sparsity and similar values of non-zero elements, while GGL only encourages similar sparsity patterns across groups.
+However, these methods are extremely sensitive to choice of penalty parameters, and require methods like cross validation for tuning, which in turn requires a large enough sample size (and often large computational power) to run. Even after tuning penalty parameters using CV based on AIC, JGL methods tend to favor large models (Danaher 2014). Additionally, they have suffered from overall global shrinkage of estimates, which can weaken the signal of results. 
 
-* However, these methods are extremely sensitive to choice of penalty parameters, and require methods like cross validation for tuning, which in turn requires a large enough sample size (and often large computational power) to run. Even after tuning penalty parameters using CV based on AIC, JGL methods tend to favor large models. 
+For these reasons, I was interested in learning more about Bayesian joint graphical model estimation, which can be designed to encourage sparsity of graph solutions and account for uncertainty in the graph structure (according to [Ni 2021](https://pubmed.ncbi.nlm.nih.gov/35673326/)). Additionally there is the opportunity to extend these methods beyond the Gaussian Graphical Model (GGM) assumptions to more accurately model biological data which does not follow multivariate normality assumption. 
 
-* Bayesian joint graphical model estimation can be designed to overcome some of these difficulties, encourage sparsity of graph solutions, and account for uncertainty in the graph structure (according to [Ni 2021](https://pubmed.ncbi.nlm.nih.gov/35673326/))
+While many of the Bayesian joint graphical model estimation methods rely on MCMC algorithms, these can be computationally prohibitive for high-dimensional biological settings. Additionally, several of the popular Bayesian methods use a G-Wishart prior (Lenkoski & Dobra 2011 and Mohammadi et al 2015) which adds to the computational problem. Even methods that use graphical horseshoe prior (Li 2017) or graphical lasso prior (Peterson 2013) need a stochastic search for model selection after the initial estimation, according to Ni 2021. 
 
-* Li, McCormick, and Clark proposed a [Bayesian spike-and-slab joint graphical lasso](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7845917/) (SSJGL) with an EM algorithm approach which results in a point estimate of the graphs and can scale to high dimensions
+
+To improve upon these limitations, Li, McCormick, and Clark proposed a [Bayesian spike-and-slab joint graphical lasso](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7845917/) (SSJGL) with an EM algorithm approach which results in a point estimate of the graphs and can scale to high dimensions. They proposed Bayesian formulations of the popular frequentist FGL and GGL methods, called DSS-FGL and DSS-GGL respectively. Additionally, this method allows for simultaneous model selection and parameter estimation.
   
-  * They propose Bayesian formulations of the popular frequentist FGL and GGL methods, called DSS-FGL and DSS-GGL respectively. 
-  
-  * I became really excited about trying out this method and comparing it to FGL and GGL! While scripts were available, I decided to make an R package based off of them called ([spikeyglass](https://mljaniczek.github.io/spikeyglass/)) so that myself and others could more easily apply SSJGL to real-world datasets. 
+  * I became really excited about trying out this method and comparing it to FGL and GGL! While scripts were available, I decided to make an R package based off of them called ([spikeyglass](https://mljaniczek.github.io/spikeyglass/)) so that myself and others could more easily apply SSJGL to real-world datasets. See below for an applied example using this package on a real-world metabolomics dataset.
 
 
 
@@ -918,7 +917,7 @@ legend("topleft", inset=.02, title="Edge",
    edge_labels, fill=edge_palette, cex=0.8)
 ```
 
-# Coments: comparing to frequentist method JGL
+# Comments: comparing to frequentist method JGL
 
 Check out my [tutorial on the frequentist method "Joint Graphical Lasso" (JGL)](https://mljaniczek.github.io/jgl-tutorial/) using the same metabolite data in this tutorial to compare the analysis results.
 
@@ -926,11 +925,23 @@ A few observations I have:
 
 * While SSJGL can take some time to run depending on your data size and parameters, I found it to be much faster than having to do cross-validation to tune the penalty terms using JGL. SSJGL does not require cross-validation or tuning, because the results are quite stable to the choice of input parameters. 
 
-* I also found the final result of SSJGL to be much more sparse compared to JGL. For example in this metabolite dataset, using DSS-GGL to jointly estimate the graph structure, Class 1 had 138 edges. This contrasts to the final tuned GGL graph, which had 240 edges. 
-
-  * According to the SSJGL paper, graph selection using AIC tends to favor larger models, which is exactly what we see happening here. 
+* I also found the final result of SSJGL to be much more sparse compared to JGL. For example in this metabolite dataset, using DSS-GGL to jointly estimate the graph structure, Class 1 had 104 edges. This contrasts to the final tuned GGL graph, which had 240 edges. According to the SSJGL paper, graph selection using AIC, like GGL, tends to favor larger models, which is exactly what we see happening here. 
   
 * I also found the results of SSJGL to be stable no matter what starting parameters I threw at it, with the number of the edges in the solution ranging from 102-148 edges. This contrasts to when I threw all kinds of lambdas into JGL and the solution for this same dataset ranged from 44 edges (with large penalty parameter lambdas) to 692 edges (with small lambdas). 
+
+# Conclusions, limitations, future directions
+
+I would feel much more confident using graphical model results from SSJGL than with standard JGL, mainly because of the stability of the results without having to rely on complex tuning methods, as well as the more sparse resulting network being more biologically applicable. 
+
+However I do still have some major questions regarding how to measure and express the "goodness" of the result! According to the book "Bayesian Data Analysis" by Andrew Gelman et. al, 
+
+*“In problems with many parameters, normal approximations to the joint distributions are often useless, and the joint mode is typically not helpful. It is often useful to base an approximation on a marginal posterior mode of a subset of the parameters…EM algorithm can be viewed as an iterative method for finding the mode of the marginal posterior density… and is extremely useful for many common models for which it is hard to maximize the marginal posterior density directly...EM proceeds by alternately evaluating conditional expectations of the log density and using these to maximize a function of a set of hyperparameters (which in turn define the conditional distribution used to compute the expectation in the next step, and so forth), converging to a point estimate of the hyperparameters and thus an approximation to the posterior distribution.”*
+
+In the case of this application to multivariate normal, often high-dimensional biological data, I found the model results to be difficult to examine and diagnose as "good" or not! While the book provides an example on how to run diagnostics on variational Bayes, they do not have a full example on model checking in a multi-parameter EM agorithm, so future directions of this work for myself will involve learning and implementing diagnostic procedures in the Bayesian EM setting. 
+
+Finally, I want to improve this project by going beyond the estimation of the graphs and incorporate methods to test differences between the estimated graphs.
+
+
 
 
 # References
@@ -959,6 +970,8 @@ Raji Balasubramanian, Denise Scholtens (2021). ENAR Conference Presentation. (Me
 ## Acknowledgements
 
 Thank you to Dr. Richard Li for providing SSJGL scripts and encouragement for R package creation!  
+
+Thank you to Dr. Leontine Alkema for helpful advice and encouraging me to reach out to Richard! 
 
 Thank you to Dr. Raji Balasubramanian for the metabolomics data, which was previously presented at ENAR 2021 with Dr. Denise Scholtens. 
 
